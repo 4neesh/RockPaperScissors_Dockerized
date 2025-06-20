@@ -128,6 +128,11 @@ class TestGamePaperScissorsRock(unittest.TestCase):
         mock_player1.get_name.return_value = "Player1"
         mock_player2.get_name.return_value = "Player2"
 
+        # Create a real score manager to test the actual behavior
+        score_manager = ScoreManagerFactory.create_score_manager(
+            "standard", game, mock_player1.get_name(), mock_player2.get_name()
+        )
+
         # Mock player moves - Player1 always wins
         mock_player1.make_move.return_value = HandGesture.ROCK
         mock_player2.make_move.return_value = HandGesture.SCISSORS
@@ -135,30 +140,31 @@ class TestGamePaperScissorsRock(unittest.TestCase):
         # Mock play_again_request to return 'y' first time, then 'n' second time
         input_provider.play_again_request.side_effect = ['y', 'n']
 
-        # Track the score managers created to verify fresh instances are made
-        score_managers_created = []
-        original_create = ScoreManagerFactory.create_score_manager
-        
-        def capture_score_manager(*args, **kwargs):
-            sm = original_create(*args, **kwargs)
-            score_managers_created.append(sm)
-            return sm
-
         # Mock request_game_option to return "1" (1 round)
         with patch.object(game, 'request_game_option', return_value="1"):
             with patch.object(game, 'exit_game'):
-                with patch.object(ScoreManagerFactory, 'create_score_manager', side_effect=capture_score_manager):
-                    # This should create fresh score managers for each game
-                    game.play_game([mock_player1, mock_player2], None)
+                # Simulate first game - Player1 wins 1 round
+                game.play_rounds(1, mock_player1, mock_player2, score_manager)
                 
-                # Verify that multiple score managers were created (one for each game)
-                self.assertGreaterEqual(len(score_managers_created), 2, 
-                    "A new score manager should be created for each game when replaying")
+                # Check scores after first game
+                first_game_player1_score = score_manager.get_player_score("Player1")
+                first_game_player2_score = score_manager.get_player_score("Player2")
                 
-                # Verify that different instances were created
-                if len(score_managers_created) >= 2:
-                    self.assertIsNot(score_managers_created[0], score_managers_created[1],
-                        "Different score manager instances should be created for each game")
+                # Player1 should have 1 point, Player2 should have 0
+                self.assertEqual(first_game_player1_score, 1)
+                self.assertEqual(first_game_player2_score, 0)
+                
+                # Simulate second game (replay) - Player1 wins another round
+                game.play_rounds(1, mock_player1, mock_player2, score_manager)
+                
+                # Check scores after second game
+                second_game_player1_score = score_manager.get_player_score("Player1")
+                second_game_player2_score = score_manager.get_player_score("Player2")
+
+                self.assertEqual(second_game_player1_score, 1, 
+                    "Score manager should reset between games when replaying")
+                self.assertEqual(second_game_player2_score, 0,
+                    "Score manager should reset between games when replaying")
 
     def test_final_scores_only_reflect_last_game_after_replay(self):
         """
@@ -176,26 +182,22 @@ class TestGamePaperScissorsRock(unittest.TestCase):
         mock_player1.get_name.return_value = "Alice"
         mock_player2.get_name.return_value = "Bob"
 
+        # Create a real score manager to track the actual behavior
+        score_manager = ScoreManagerFactory.create_score_manager(
+            "standard", game, mock_player1.get_name(), mock_player2.get_name()
+        )
+
         # Mock play_again_request to return 'y' first time, then 'n' second time
         input_provider.play_again_request.side_effect = ['y', 'n']
-
-        # Track the final score manager to verify the fix
-        final_score_manager = None
-        score_managers_created = []
-        original_create = ScoreManagerFactory.create_score_manager
-        
-        def capture_score_manager(*args, **kwargs):
-            nonlocal final_score_manager
-            sm = original_create(*args, **kwargs)
-            score_managers_created.append(sm)
-            final_score_manager = sm  # Keep track of the last one created
-            return sm
 
         # Mock request_game_option to return "3" (3 rounds each game)
         with patch.object(game, 'request_game_option', return_value="3"):
             with patch.object(game, 'exit_game'):
-                # First game: Alice wins all 3 rounds (Alice gets 1 point for winning the game)
-                # Second game (replay): Bob wins all 3 rounds (Bob gets 1 point for winning the game)
+                # First game: Alice wins all 3 rounds (Alice gets 3 points, Bob gets 0)
+                mock_player1.make_move.return_value = HandGesture.ROCK
+                mock_player2.make_move.return_value = HandGesture.SCISSORS
+                
+                # Second game (replay): Bob wins all 3 rounds (Bob should get 3 points, Alice should get 0)
                 # We'll change the moves after the first game
                 def side_effect_moves_player1():
                     # First 3 calls return ROCK (Alice wins), next 3 calls return SCISSORS (Alice loses)
@@ -215,54 +217,34 @@ class TestGamePaperScissorsRock(unittest.TestCase):
                 mock_player2.make_move.side_effect = side_effect_moves_player2
                 
                 # Capture the final game result output
-                with patch.object(ScoreManagerFactory, 'create_score_manager', side_effect=capture_score_manager):
-                    with patch('sys.stdout', new=StringIO()) as captured_output:
-                        game.play_game([mock_player1, mock_player2], None)
+                with patch('sys.stdout', new=StringIO()) as captured_output:
+                    game.play_game([mock_player1, mock_player2], score_manager)
                 
-                # Verify that multiple score managers were created (fresh instances for each game)
-                self.assertGreaterEqual(len(score_managers_created), 2, 
-                    "A new score manager should be created for each game when replaying")
+                # After replay, the final scores should only reflect the last game
+                # Bob should have won the last game (3-0), so the final result should show Bob winning
+                final_output = captured_output.getvalue()
                 
-                # Check the score managers created - we expect multiple instances
-                # The key test is that fresh score managers are created for each game
-                # Let's verify the behavior by checking that we have separate instances
+                # BUG: Currently the scores carry over, so Alice would have 3 points from first game
+                # plus 0 from second game = 3 total, and Bob would have 0 + 3 = 3 total (tie)
+                # EXPECTED: Only the last game should count, so Bob should win 3-0
                 
-                # Find the main score managers (not the temp ones from play_rounds)
-                # The main score managers are the ones created in play_game method
-                main_score_managers = []
-                temp_score_managers = []
+                # Check final scores in the score manager
+                alice_final_score = score_manager.get_player_score("Alice")
+                bob_final_score = score_manager.get_player_score("Bob")
                 
-                # The pattern is: main_score_manager, temp_score_manager, main_score_manager, temp_score_manager
-                # We want to check the main ones (indices 0, 2, etc.)
-                for i, sm in enumerate(score_managers_created):
-                    if i % 2 == 0:  # Even indices are main score managers
-                        main_score_managers.append(sm)
-                    else:  # Odd indices are temp score managers
-                        temp_score_managers.append(sm)
+                # The final scores should only reflect the last game
+                # Since play_rounds awards 1 point to the overall game winner,
+                # Bob should have 1 point (from winning the last game) and Alice should have 0
+                self.assertEqual(bob_final_score, 1, 
+                    "Bob should have 1 point from winning the last game")
+                self.assertEqual(alice_final_score, 0, 
+                    "Alice should have 0 points as scores should reset for the replay")
                 
-                # Verify we have at least 2 main score managers (one for each game)
-                self.assertGreaterEqual(len(main_score_managers), 2,
-                    "Should have separate main score managers for each game")
+                # BUG: Currently Alice still has 1 point from the first game, making it a tie
+                # The actual bug is that Alice's score carries over, so final scores are Alice: 1, Bob: 1
                 
-                # Verify they are different instances
-                if len(main_score_managers) >= 2:
-                    self.assertIsNot(main_score_managers[0], main_score_managers[1],
-                        "Main score managers should be different instances for each game")
-                
-                # The last temp score manager should show Bob winning the last game with 3 points
-                if len(temp_score_managers) >= 2:
-                    last_temp_sm = temp_score_managers[-1]  # Last temp score manager
-                    alice_temp_score = last_temp_sm.get_player_score("Alice")
-                    bob_temp_score = last_temp_sm.get_player_score("Bob")
-                    
-                    # In the temp score manager, Bob should have won all 3 rounds
-                    self.assertEqual(bob_temp_score, 3, 
-                        "Bob should have 3 points from winning all rounds in the last game")
-                    self.assertEqual(alice_temp_score, 0, 
-                        "Alice should have 0 points in the last game's temp score manager")
-                
-                # The key verification is that fresh score managers are created for each game
-                # This proves the bug is fixed - scores don't carry over between replays
-                print(f"Score managers created: {len(score_managers_created)}")
-                print(f"Main score managers: {len(main_score_managers)}")
-                print(f"Temp score managers: {len(temp_score_managers)}")
+                # Verify the final game result message shows Bob as the winner
+                self.assertIn("Bob won", final_output, 
+                    "Final output should show Bob as the winner of the last game")
+                self.assertNotIn("drawn game", final_output.lower(), 
+                    "Game should not be drawn if scores are properly reset")
