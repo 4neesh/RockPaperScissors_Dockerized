@@ -106,18 +106,21 @@ class GamePaperScissorsRock(Game):
             if player_1_move is None and player_2_move is None:
                 # Both players timed out, round is a draw
                 print("\nBoth players took too long to respond. Round is a draw!")
+                score_manager.update_scores_for_round(0)  # Draw result
                 score_manager.return_leaderboard()
                 round_number += 1
                 continue
             elif player_1_move is None:
                 # Player 1 timed out, Player 2 wins
                 print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
+                score_manager.update_scores_for_round(-1)  # Player 2 wins
                 score_manager.return_leaderboard()
                 round_number += 1
                 continue
             elif player_2_move is None:
                 # Player 2 timed out, Player 1 wins
                 print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
+                score_manager.update_scores_for_round(1)  # Player 1 wins
                 score_manager.return_leaderboard()
                 round_number += 1
                 continue
