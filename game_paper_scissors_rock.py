@@ -50,27 +50,25 @@ class GamePaperScissorsRock(Game):
         self.output_provider.introduce_game("Paper Scissors Rock")
         game_mode = self.select_game_mode()
         players = game_mode.initialise_players_in_game(self)
+        self.play_game(players)  # Removed score_manager creation and passing
 
-        # Create a score manager using the factory
-        score_manager = ScoreManagerFactory.create_score_manager(
-            self.SCORE_MANAGER_TYPE,
-            self,
-            players[0].get_name(),
-            players[1].get_name()
-        )
-
-        self.play_game(players, score_manager)
-
-    def play_game(self, players: [Player, Player], score_manager: ScoreManager):
+    def play_game(self, players: [Player, Player]):
         """
         Play a game with the specified players and score manager.
 
         Args:
             players: A list of two players (player 1 and player 2)
-            score_manager: The score manager to use for tracking scores
         """
         replay = "y"
         while replay.lower() == "y":
+            # Create a new score manager for each game to reset scores
+            score_manager = ScoreManagerFactory.create_score_manager(
+                self.SCORE_MANAGER_TYPE,
+                self,
+                players[0].get_name(),
+                players[1].get_name()
+            )
+
             game_option = self.request_game_option()
 
             if game_option == "bo5":
@@ -94,18 +92,11 @@ class GamePaperScissorsRock(Game):
             player_2: The second player
             score_manager: The score manager to use for tracking scores
         """
-        # Create a new score manager for each best-of-5 series to start with fresh scores
-        temp_score_manager = ScoreManagerFactory.create_score_manager(
-            self.SCORE_MANAGER_TYPE,
-            self,
-            player_1.get_name(),
-            player_2.get_name()
-        )
-
         round_number = 1
 
         # Best of 5 means first to 3 points
-        while round_number <= self.BEST_OF_5 and temp_score_manager.get_player_score(player_1.get_name()) < 3 and temp_score_manager.get_player_score(player_2.get_name()) < 3:
+        while round_number <= self.BEST_OF_5 and score_manager.get_player_score(
+                player_1.get_name()) < 3 and score_manager.get_player_score(player_2.get_name()) < 3:
             self.output_provider.output_round_number(round_number, self.BEST_OF_5)
             # Get moves from players with time limit
             player_1_move = player_1.make_move()
@@ -115,25 +106,22 @@ class GamePaperScissorsRock(Game):
             if player_1_move is None and player_2_move is None:
                 # Both players timed out, round is a draw
                 print("\nBoth players took too long to respond. Round is a draw!")
-                temp_score_manager.update_scores_for_round(0)
                 score_manager.update_scores_for_round(0)
-                temp_score_manager.return_leaderboard()
+                score_manager.return_leaderboard()
                 round_number += 1
                 continue
             elif player_1_move is None:
                 # Player 1 timed out, Player 2 wins
                 print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
-                temp_score_manager.update_scores_for_round(-1)  # Player 2 wins
                 score_manager.update_scores_for_round(-1)  # Player 2 wins
-                temp_score_manager.return_leaderboard()
+                score_manager.return_leaderboard()
                 round_number += 1
                 continue
             elif player_2_move is None:
                 # Player 2 timed out, Player 1 wins
                 print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
-                temp_score_manager.update_scores_for_round(1)  # Player 1 wins
                 score_manager.update_scores_for_round(1)  # Player 1 wins
-                temp_score_manager.return_leaderboard()
+                score_manager.return_leaderboard()
                 round_number += 1
                 continue
 
@@ -146,16 +134,14 @@ class GamePaperScissorsRock(Game):
 
             # Use the rules object to determine the result
             round_result = self.rules.determine_result(player_1_move, player_2_move)
-            temp_score_manager.update_scores_for_round(round_result)
             score_manager.update_scores_for_round(round_result)
-
-            temp_score_manager.return_leaderboard()
+            score_manager.return_leaderboard()
             round_number += 1
 
-            # Provide feedback about best-of-5 result
-        if temp_score_manager.get_player_score(player_1.get_name()) > temp_score_manager.get_player_score(player_2.get_name()):
+        # Provide feedback about best-of-5 result
+        if score_manager.get_player_score(player_1.get_name()) > score_manager.get_player_score(player_2.get_name()):
             print(f"\n{player_1.get_name()} wins the Best of 5 series!")
-        elif temp_score_manager.get_player_score(player_2.get_name()) > temp_score_manager.get_player_score(player_1.get_name()):
+        elif score_manager.get_player_score(player_2.get_name()) > score_manager.get_player_score(player_1.get_name()):
             print(f"\n{player_2.get_name()} wins the Best of 5 series!")
         else:
             print(f"Best of 5 series finishes in a draw!")
@@ -170,14 +156,6 @@ class GamePaperScissorsRock(Game):
             player_2: The second player
             score_manager: The score manager to use for tracking scores
         """
-        # Create a new score manager for this game to start with fresh scores
-        temp_score_manager = ScoreManagerFactory.create_score_manager(
-            self.SCORE_MANAGER_TYPE,
-            self,
-            player_1.get_name(),
-            player_2.get_name()
-        )
-
         for round_number in range(1, int(rounds_in_game) + 1):
             self.output_provider.output_round_number(round_number, rounds_in_game)
 
@@ -189,18 +167,19 @@ class GamePaperScissorsRock(Game):
             if player_1_move is None and player_2_move is None:
                 # Both players timed out, round is a draw
                 print("\nBoth players took too long to respond. Round is a draw!")
+                score_manager.return_leaderboard()
                 continue
             elif player_1_move is None:
                 # Player 1 timed out, Player 2 wins
                 print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
-                temp_score_manager.update_scores_for_round(-1)  # Player 2 wins
-                temp_score_manager.return_leaderboard()
+                score_manager.update_scores_for_round(-1)  # Player 2 wins
+                score_manager.return_leaderboard()
                 continue
             elif player_2_move is None:
                 # Player 2 timed out, Player 1 wins
                 print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
-                temp_score_manager.update_scores_for_round(1)  # Player 1 wins
-                temp_score_manager.return_leaderboard()
+                score_manager.update_scores_for_round(1)  # Player 1 wins
+                score_manager.return_leaderboard()
                 continue
 
             # Normal case - both players made valid moves
@@ -212,17 +191,8 @@ class GamePaperScissorsRock(Game):
 
             # Use the rules object to determine the result
             round_result = self.rules.determine_result(player_1_move, player_2_move)
-            temp_score_manager.update_scores_for_round(round_result)
-            temp_score_manager.return_leaderboard()
-
-        # Update the main score manager based on the final game result
-        if temp_score_manager.get_player_score(player_1.get_name()) > temp_score_manager.get_player_score(player_2.get_name()):
-            score_manager.update_scores_for_round(1)  # Player 1 wins overall
-        elif temp_score_manager.get_player_score(player_2.get_name()) > temp_score_manager.get_player_score(player_1.get_name()):
-            score_manager.update_scores_for_round(-1)  # Player 2 wins overall
-        else:
-            # It's a draw
-            score_manager.update_scores_for_round(0)
+            score_manager.update_scores_for_round(round_result)
+            score_manager.return_leaderboard()
 
     def request_game_option(self) -> str:
         """
