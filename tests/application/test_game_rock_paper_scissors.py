@@ -216,3 +216,42 @@ class TestGamePaperScissorsRock(unittest.TestCase):
         # Assert the expected final scores: Player2 should have 3.5, Player1 should have 0.5
         self.assertEqual(1, player1_final_score, "Player1 should have 1 point")
         self.assertEqual(3, player2_final_score, "Player2 should have 3 points")
+
+
+    def test_play_rounds_both_players_none_should_update_score_with_draw(self):
+        """
+        Test that when both players return None in play_rounds,
+        the score is updated with a draw (0) result.
+        This test verifies the bug fix for lines 169-170 in game_paper_scissors_rock.py
+        """
+        # Setup mocks
+        input_provider = Mock(spec=InputProviderConsole)
+        output_provider = Mock(spec=OutputProviderConsole)
+        game = GamePaperScissorsRock(input_provider, output_provider)
+
+        # Mock player setup
+        mock_player1 = Mock(spec=Player)
+        mock_player2 = Mock(spec=Player)
+        mock_player1.get_name.return_value = "Player1"
+        mock_player2.get_name.return_value = "Player2"
+
+        # Create a real score manager to track the actual behavior
+        score_manager = ScoreManagerFactory.create_score_manager(
+            "standard", game, mock_player1.get_name(), mock_player2.get_name()
+        )
+
+        # Mock both players to return None (simulating timeout/no response)
+        mock_player1.make_move.return_value = None
+        mock_player2.make_move.return_value = None
+
+        # Play 1 round where both players return None
+        with patch('sys.stdout', new=StringIO()):
+            game.play_rounds(1, mock_player1, mock_player2, score_manager)
+
+        # Check that scores were updated with draw result (0.5 points each)
+        player1_score = score_manager.get_player_score("Player1")
+        player2_score = score_manager.get_player_score("Player2")
+
+        # Both players should have 0.5 points from the draw
+        self.assertEqual(0.5, player1_score, "Player1 should have 0.5 points from draw")
+        self.assertEqual(0.5, player2_score, "Player2 should have 0.5 points from draw")
