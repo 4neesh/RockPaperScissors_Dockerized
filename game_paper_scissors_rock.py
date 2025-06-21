@@ -95,7 +95,7 @@ class GamePaperScissorsRock(Game):
         round_number = 1
 
         # Best of 5 means first to 3 points
-        while round_number <= self.BEST_OF_5 and score_manager.get_player_score(
+        while round_number < self.BEST_OF_5 and score_manager.get_player_score(
                 player_1.get_name()) < 3 and score_manager.get_player_score(player_2.get_name()) < 3:
             self.output_provider.output_round_number(round_number, self.BEST_OF_5)
             # Get moves from players with time limit
@@ -164,15 +164,13 @@ class GamePaperScissorsRock(Game):
             player_2_move = player_2.make_move()
 
             if player_1_move is None:
-                # Player 1 timed out, Player 2 wins
                 print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
-                score_manager.update_scores_for_round(-1)  # Player 2 wins
+                score_manager.update_scores_for_round(-1)
                 score_manager.return_leaderboard()
                 continue
             elif player_2_move is None:
-                # Player 2 timed out, Player 1 wins
                 print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
-                score_manager.update_scores_for_round(1)  # Player 1 wins
+                score_manager.update_scores_for_round(1)
                 score_manager.return_leaderboard()
                 continue
 

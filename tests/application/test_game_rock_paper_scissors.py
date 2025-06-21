@@ -304,3 +304,47 @@ class TestGamePaperScissorsRock(unittest.TestCase):
 
         self.assertEqual(0, player1_final_score, "Player1 should have 0 points")
         self.assertEqual(3, player2_final_score, "Player2 should have 3 points")
+
+    def test_best_of_five_game_flow(self):
+
+        # Setup mocks
+        input_provider = Mock(spec=InputProviderConsole)
+        output_provider = Mock(spec=OutputProviderConsole)
+        game = GamePaperScissorsRock(input_provider, output_provider)
+
+        # Mock player setup
+        mock_player1 = Mock(spec=Player)
+        mock_player2 = Mock(spec=Player)
+        mock_player1.get_name.return_value = "Player1"
+        mock_player2.get_name.return_value = "Player2"
+
+        # Create a real score manager to track the actual behavior
+        score_manager = ScoreManagerFactory.create_score_manager(
+            "standard", game, mock_player1.get_name(), mock_player2.get_name()
+        )
+
+        # Mock player moves for the specific scenario
+        # Round 1 & 2: Player1 rock, Player2 paper (Player2 wins both)
+        # Round 3: Both return None (simulating draw)
+        # Round 4: Player1 rock, Player2 paper (Player2 wins)
+        player1_moves = [HandGesture.ROCK, HandGesture.ROCK,  HandGesture.ROCK,  HandGesture.ROCK,  HandGesture.ROCK]
+        player2_moves = [HandGesture.PAPER, HandGesture.PAPER, HandGesture.SCISSORS, HandGesture.SCISSORS, HandGesture.SCISSORS]
+
+        mock_player1.make_move.side_effect = player1_moves
+        mock_player2.make_move.side_effect = player2_moves
+
+        # Mock play_again_request to return 'n' (no replay)
+        input_provider.play_again_request.return_value = 'n'
+
+        # Capture the final game result output
+        with patch('sys.stdout', new=StringIO()) as captured_output:
+            # Simulate the best of 5 game manually
+            game.play_best_of_5(mock_player1, mock_player2, score_manager)
+            score_manager.return_game_result()
+
+        # Check final scores
+        player1_final_score = score_manager.get_player_score("Player1")
+        player2_final_score = score_manager.get_player_score("Player2")
+
+        self.assertEqual(3, player1_final_score, "Player1 should have 0 points")
+        self.assertEqual(2, player2_final_score, "Player2 should have 3 points")
