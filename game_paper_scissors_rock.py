@@ -106,7 +106,7 @@ class GamePaperScissorsRock(Game):
             if player_1_move is None and player_2_move is None:
                 # Both players timed out, round is a draw
                 print("\nBoth players took too long to respond. Round is a draw!")
-                score_manager.update_scores_for_round(0)
+                score_manager.update_scores_for_round(0)  # Draw result
                 score_manager.return_leaderboard()
                 round_number += 1
                 continue
