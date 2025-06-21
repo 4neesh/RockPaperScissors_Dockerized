@@ -17,6 +17,19 @@ class ScoreManager(ABC):
         pass
 
     @abstractmethod
+    def get_player_wins(self, player_name: str) -> int:
+        """
+        Get the number of wins for a specific player (excluding draws).
+
+        Args:
+            player_name: The name of the player
+
+        Returns:
+            The player's win count
+        """
+        pass
+
+    @abstractmethod
     def update_scores_for_round(self, round_result: int) -> None:
         """
         Update scores based on the round result.
@@ -44,31 +57,30 @@ class ScoreManager(ABC):
         """
         pass
 
-
 class StandardScoreManager(ScoreManager):
-    """
-    Standard implementation of ScoreManager that tracks win/loss/draw scores.
-
-    This implementation awards 1 point for a win, 0.5 for a draw, and 0 for a loss.
-    """
-
     def __init__(self, game: Game, player_1_name: str, player_2_name: str):
-        self._scores = {player_1_name: 0, player_2_name: 0}
+        self._scores = {player_1_name: 0.0, player_2_name: 0.0}
+        self._wins = {player_1_name: 0, player_2_name: 0}  # Track wins separately
         self._player_1_name = player_1_name
         self._player_2_name = player_2_name
         self._game = game
 
+
     def return_leaderboard(self) -> None:
         self._game.output_provider.output_scores_table(self._scores)
+
 
     def update_scores_for_round(self, round_result: int) -> None:
         if round_result == 1:
             self._scores[self._player_1_name] += 1
+            self._wins[self._player_1_name] += 1
         elif round_result == -1:
             self._scores[self._player_2_name] += 1
+            self._wins[self._player_2_name] += 1
         else:
             self._scores[self._player_1_name] += 0.5
             self._scores[self._player_2_name] += 0.5
+
 
     def return_game_result(self) -> None:
         winner = max(self._scores, key=self._scores.get)
@@ -80,9 +92,15 @@ class StandardScoreManager(ScoreManager):
         else:
             self._game.output_provider.output_game_winner(winner, winner_score, loser_score)
 
+
     def get_player_score(self, player_name: str) -> float:
         """Get the current score for a specific player."""
-        return self._scores.get(player_name, 0)
+        return self._scores.get(player_name, 0.0)
+
+
+    def get_player_wins(self, player_name: str) -> int:
+        """Get the number of wins for a specific player (excluding draws)."""
+        return self._wins.get(player_name, 0)
 
 
 class StreakScoreManager(ScoreManager):
@@ -99,6 +117,7 @@ class StreakScoreManager(ScoreManager):
 
     def __init__(self, game: Game, player_1_name: str, player_2_name: str):
         self._scores = {player_1_name: 0, player_2_name: 0}
+        self._wins = {player_1_name: 0, player_2_name: 0}  # Track wins separately
         self._player_1_name = player_1_name
         self._player_2_name = player_2_name
         self._game = game
@@ -117,6 +136,7 @@ class StreakScoreManager(ScoreManager):
     def update_scores_for_round(self, round_result: int) -> None:
         if round_result == 1:
             # Player 1 wins
+            self._wins[self._player_1_name] += 1
             self._player_1_streak += 1
             self._player_2_streak = 0
             # Award points based on streak length
@@ -128,6 +148,7 @@ class StreakScoreManager(ScoreManager):
                 self._scores[self._player_1_name] += 3
         elif round_result == -1:
             # Player 2 wins
+            self._wins[self._player_2_name] += 1
             self._player_2_streak += 1
             self._player_1_streak = 0
             # Award points based on streak length
@@ -142,6 +163,10 @@ class StreakScoreManager(ScoreManager):
             self._player_1_streak = 0
             self._player_2_streak = 0
             # No points awarded for draws
+
+    def get_player_wins(self, player_name: str) -> int:
+        """Get the number of wins for a specific player (excluding draws)."""
+        return self._wins.get(player_name, 0)
 
     def return_game_result(self) -> None:
         winner = max(self._scores, key=self._scores.get)
