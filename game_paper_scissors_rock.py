@@ -107,34 +107,27 @@ class GamePaperScissorsRock(Game):
                 # Both players timed out, round is a draw
                 print("\nBoth players took too long to respond. Round is a draw!")
                 score_manager.update_scores_for_round(0)  # Draw result
-                score_manager.return_leaderboard()
-                round_number += 1
-                continue
             elif player_1_move is None:
                 # Player 1 timed out, Player 2 wins
                 print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
                 score_manager.update_scores_for_round(-1)  # Player 2 wins
-                score_manager.return_leaderboard()
-                round_number += 1
-                continue
             elif player_2_move is None:
                 # Player 2 timed out, Player 1 wins
                 print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
                 score_manager.update_scores_for_round(1)  # Player 1 wins
-                score_manager.return_leaderboard()
-                round_number += 1
-                continue
+            else:
+                # Normal case - both players made valid moves
+                self.output_provider.output_round_moves(player_1, player_2, player_1_move, player_2_move)
 
-            # Normal case - both players made valid moves
-            self.output_provider.output_round_moves(player_1, player_2, player_1_move, player_2_move)
+                # Use the rules object for interaction description
+                interaction_description = self.rules.get_interaction_description(player_1_move, player_2_move)
+                self.output_provider.output_round_description(interaction_description)
 
-            # Use the rules object for interaction description
-            interaction_description = self.rules.get_interaction_description(player_1_move, player_2_move)
-            self.output_provider.output_round_description(interaction_description)
+                # Use the rules object to determine the result
+                round_result = self.rules.determine_result(player_1_move, player_2_move)
+                score_manager.update_scores_for_round(round_result)
 
-            # Use the rules object to determine the result
-            round_result = self.rules.determine_result(player_1_move, player_2_move)
-            score_manager.update_scores_for_round(round_result)
+            # Always show leaderboard after each round
             score_manager.return_leaderboard()
             round_number += 1
 
@@ -156,34 +149,37 @@ class GamePaperScissorsRock(Game):
             player_2: The second player
             score_manager: The score manager to use for tracking scores
         """
-        for round_number in range(1, int(rounds_in_game)):
+        for round_number in range(1, int(rounds_in_game) + 1):  # Fixed: added +1 to include final round
             self.output_provider.output_round_number(round_number, rounds_in_game)
 
             # Get moves from players with time limit
             player_1_move = player_1.make_move()
             player_2_move = player_2.make_move()
 
-            if player_1_move is None:
+            # Handle timeout cases
+            if player_1_move is None and player_2_move is None:
+                # Both players timed out, round is a draw
+                print("\nBoth players took too long to respond. Round is a draw!")
+                score_manager.update_scores_for_round(0)  # Draw result
+            elif player_1_move is None:
                 print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
                 score_manager.update_scores_for_round(-1)
-                score_manager.return_leaderboard()
-                continue
             elif player_2_move is None:
                 print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
                 score_manager.update_scores_for_round(1)
-                score_manager.return_leaderboard()
-                continue
+            else:
+                # Normal case - both players made valid moves
+                self.output_provider.output_round_moves(player_1, player_2, player_1_move, player_2_move)
 
-            # Normal case - both players made valid moves
-            self.output_provider.output_round_moves(player_1, player_2, player_1_move, player_2_move)
+                # Use the rules object for interaction description
+                interaction_description = self.rules.get_interaction_description(player_1_move, player_2_move)
+                self.output_provider.output_round_description(interaction_description)
 
-            # Use the rules object for interaction description
-            interaction_description = self.rules.get_interaction_description(player_1_move, player_2_move)
-            self.output_provider.output_round_description(interaction_description)
+                # Use the rules object to determine the result
+                round_result = self.rules.determine_result(player_1_move, player_2_move)
+                score_manager.update_scores_for_round(round_result)
 
-            # Use the rules object to determine the result
-            round_result = self.rules.determine_result(player_1_move, player_2_move)
-            score_manager.update_scores_for_round(round_result)
+            # Always show leaderboard after each round
             score_manager.return_leaderboard()
 
     def request_game_option(self) -> str:

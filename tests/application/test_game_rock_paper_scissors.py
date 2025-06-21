@@ -346,5 +346,5 @@ class TestGamePaperScissorsRock(unittest.TestCase):
         player1_final_score = score_manager.get_player_score("Player1")
         player2_final_score = score_manager.get_player_score("Player2")
 
-        self.assertEqual(3, player1_final_score, "Player1 should have 0 points")
-        self.assertEqual(2, player2_final_score, "Player2 should have 3 points")
+        self.assertEqual(3, player1_final_score, "Player1 should have 3 points")
+        self.assertEqual(2, player2_final_score, "Player2 should have 2 points")
