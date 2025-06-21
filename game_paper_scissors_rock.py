@@ -156,20 +156,14 @@ class GamePaperScissorsRock(Game):
             player_2: The second player
             score_manager: The score manager to use for tracking scores
         """
-        for round_number in range(1, int(rounds_in_game) + 1):
+        for round_number in range(1, int(rounds_in_game)):
             self.output_provider.output_round_number(round_number, rounds_in_game)
 
             # Get moves from players with time limit
             player_1_move = player_1.make_move()
             player_2_move = player_2.make_move()
 
-            # Handle timeout cases
-            if player_1_move is None and player_2_move is None:
-                # Both players timed out, round is a draw
-                print("\nBoth players took too long to respond. Round is a draw!")
-                score_manager.return_leaderboard()
-                continue
-            elif player_1_move is None:
+            if player_1_move is None:
                 # Player 1 timed out, Player 2 wins
                 print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
                 score_manager.update_scores_for_round(-1)  # Player 2 wins
