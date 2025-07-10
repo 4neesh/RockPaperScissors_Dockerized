@@ -1,7 +1,7 @@
 import signal
 from src.game_utils.game_mode import GameMode
 from src.io_utils.input_provider import InputProvider
-from constants import Messages, Timeouts
+from constants import Messages, Timeouts, GameConfig
 
 
 class TimeoutException(Exception):
