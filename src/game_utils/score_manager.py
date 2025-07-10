@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from game import Game
+from constants import ScoringConfig, Messages
 
 
 class ScoreManager(ABC):
@@ -53,7 +54,10 @@ class StandardScoreManager(ScoreManager):
     """
 
     def __init__(self, game: Game, player_1_name: str, player_2_name: str):
-        self._scores = {player_1_name: 0, player_2_name: 0}
+        self._scores = {
+            player_1_name: ScoringConfig.LOSS_POINTS,
+            player_2_name: ScoringConfig.LOSS_POINTS
+        }
         self._player_1_name = player_1_name
         self._player_2_name = player_2_name
         self._game = game
@@ -62,13 +66,13 @@ class StandardScoreManager(ScoreManager):
         self._game.output_provider.output_scores_table(self._scores)
 
     def update_scores_for_round(self, round_result: int) -> None:
-        if round_result == 1:
-            self._scores[self._player_1_name] += 1
-        elif round_result == -1:
-            self._scores[self._player_2_name] += 1
+        if round_result == ScoringConfig.PLAYER_1_WIN:
+            self._scores[self._player_1_name] += ScoringConfig.WIN_POINTS
+        elif round_result == ScoringConfig.PLAYER_2_WIN:
+            self._scores[self._player_2_name] += ScoringConfig.WIN_POINTS
         else:
-            self._scores[self._player_1_name] += 0.5
-            self._scores[self._player_2_name] += 0.5
+            self._scores[self._player_1_name] += ScoringConfig.DRAW_POINTS
+            self._scores[self._player_2_name] += ScoringConfig.DRAW_POINTS
 
     def return_game_result(self) -> None:
         winner = max(self._scores, key=self._scores.get)
@@ -82,7 +86,7 @@ class StandardScoreManager(ScoreManager):
 
     def get_player_score(self, player_name: str) -> float:
         """Get the current score for a specific player."""
-        return self._scores.get(player_name, 0)
+        return self._scores.get(player_name, ScoringConfig.LOSS_POINTS)
 
 
 class StreakScoreManager(ScoreManager):
@@ -98,49 +102,56 @@ class StreakScoreManager(ScoreManager):
     """
 
     def __init__(self, game: Game, player_1_name: str, player_2_name: str):
-        self._scores = {player_1_name: 0, player_2_name: 0}
+        self._scores = {
+            player_1_name: ScoringConfig.LOSS_POINTS,
+            player_2_name: ScoringConfig.LOSS_POINTS
+        }
         self._player_1_name = player_1_name
         self._player_2_name = player_2_name
         self._game = game
-        self._player_1_streak = 0
-        self._player_2_streak = 0
+        self._player_1_streak = ScoringConfig.LOSS_POINTS
+        self._player_2_streak = ScoringConfig.LOSS_POINTS
 
     def return_leaderboard(self) -> None:
         # Create a display that includes streaks
         display_scores = self._scores.copy()
-        display_scores[f"{self._player_1_name} (streak: {self._player_1_streak})"] = display_scores.pop(
-            self._player_1_name)
-        display_scores[f"{self._player_2_name} (streak: {self._player_2_streak})"] = display_scores.pop(
-            self._player_2_name)
+        display_scores[Messages.STREAK_DISPLAY_FORMAT.format(
+            player_name=self._player_1_name,
+            streak=self._player_1_streak
+        )] = display_scores.pop(self._player_1_name)
+        display_scores[Messages.STREAK_DISPLAY_FORMAT.format(
+            player_name=self._player_2_name,
+            streak=self._player_2_streak
+        )] = display_scores.pop(self._player_2_name)
         self._game.output_provider.output_scores_table(display_scores)
 
     def update_scores_for_round(self, round_result: int) -> None:
-        if round_result == 1:
+        if round_result == ScoringConfig.PLAYER_1_WIN:
             # Player 1 wins
-            self._player_1_streak += 1
-            self._player_2_streak = 0
+            self._player_1_streak += ScoringConfig.PLAYER_1_WIN
+            self._player_2_streak = ScoringConfig.LOSS_POINTS
             # Award points based on streak length
-            if self._player_1_streak == 1:
-                self._scores[self._player_1_name] += 1
-            elif self._player_1_streak == 2:
-                self._scores[self._player_1_name] += 2
+            if self._player_1_streak == ScoringConfig.FIRST_WIN_POINTS:
+                self._scores[self._player_1_name] += ScoringConfig.FIRST_WIN_POINTS
+            elif self._player_1_streak == ScoringConfig.SECOND_WIN_POINTS:
+                self._scores[self._player_1_name] += ScoringConfig.SECOND_WIN_POINTS
             else:
-                self._scores[self._player_1_name] += 3
-        elif round_result == -1:
+                self._scores[self._player_1_name] += ScoringConfig.THIRD_PLUS_WIN_POINTS
+        elif round_result == ScoringConfig.PLAYER_2_WIN:
             # Player 2 wins
-            self._player_2_streak += 1
-            self._player_1_streak = 0
+            self._player_2_streak += ScoringConfig.PLAYER_1_WIN
+            self._player_1_streak = ScoringConfig.LOSS_POINTS
             # Award points based on streak length
-            if self._player_2_streak == 1:
-                self._scores[self._player_2_name] += 1
-            elif self._player_2_streak == 2:
-                self._scores[self._player_2_name] += 2
+            if self._player_2_streak == ScoringConfig.FIRST_WIN_POINTS:
+                self._scores[self._player_2_name] += ScoringConfig.FIRST_WIN_POINTS
+            elif self._player_2_streak == ScoringConfig.SECOND_WIN_POINTS:
+                self._scores[self._player_2_name] += ScoringConfig.SECOND_WIN_POINTS
             else:
-                self._scores[self._player_2_name] += 3
+                self._scores[self._player_2_name] += ScoringConfig.THIRD_PLUS_WIN_POINTS
         else:
             # Draw - reset streaks
-            self._player_1_streak = 0
-            self._player_2_streak = 0
+            self._player_1_streak = ScoringConfig.LOSS_POINTS
+            self._player_2_streak = ScoringConfig.LOSS_POINTS
             # No points awarded for draws
 
     def return_game_result(self) -> None:
@@ -155,6 +166,4 @@ class StreakScoreManager(ScoreManager):
 
     def get_player_score(self, player_name: str) -> float:
         """Get the current score for a specific player."""
-        return self._scores.get(player_name, 0)
-
-
+        return self._scores.get(player_name, ScoringConfig.LOSS_POINTS)
