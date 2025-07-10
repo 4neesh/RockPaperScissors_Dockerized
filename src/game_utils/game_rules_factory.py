@@ -1,48 +1,48 @@
-from typing import Dict, Type
+from typing import Type, Dict
 
 from src.game_utils.game_rules import GameRules
-from src.game_utils.hand_gesture import HandGesture
 from src.game_utils.rps_rules import RPSRules
+from src.constants import GameConstants, GameMessages
 
 
 class GameRulesFactory:
     """
-    Factory class for creating game rule objects.
-    This factory makes it easy to create the appropriate rules implementation for different games.
+    Factory class for creating game rules instances.
+
+    This factory supports creating different rule sets for various games.
     """
-    
-    # Registry of game rule implementations
+
     _rules_registry: Dict[str, Type[GameRules]] = {
-        "rps": RPSRules
+        GameConstants.GAME_TYPE_RPS: RPSRules
     }
-    
+
     @classmethod
     def create_rules(cls, game_type: str) -> GameRules:
         """
-        Creates a rules instance for the specified game type.
-        
+        Create a game rules instance based on the game type.
+
         Args:
             game_type: The type of game rules to create (e.g., "rps" for Rock-Paper-Scissors)
-            
+
         Returns:
-            An instance of the appropriate GameRules implementation
-            
+            An instance of the appropriate GameRules subclass
+
         Raises:
             ValueError: If the game type is not supported
         """
         if game_type not in cls._rules_registry:
-            raise ValueError(f"Unsupported game type: {game_type}")
-        
-        rule_class = cls._rules_registry[game_type]
-        return rule_class()
-    
+            raise ValueError(GameMessages.UNSUPPORTED_GAME_TYPE.format(game_type=game_type))
+
+        rules_class = cls._rules_registry[game_type]
+        return rules_class()
+
     @classmethod
-    def register_rules(cls, game_type: str, rules_class: Type[GameRules]) -> None:
+    def register_rules(cls, game_type: str, rules_class: Type[GameRules]):
         """
-        Register a new rules implementation.
-        
+        Register a new game rules type with the factory.
+
         Args:
-            game_type: The type identifier for the game
-            rules_class: The class implementing the rules
+            game_type: The key for this rules type
+            rules_class: The GameRules subclass to register
         """
-        cls._rules_registry[game_type] = rules_class 
+        cls._rules_registry[game_type] = rules_class

@@ -8,7 +8,7 @@ class HumanPlayer(Player):
     Represents a human player in the game. 
     The player provides their name and makes moves interactively.
     """
-    
+
     def __init__(self, game: Game, player_id: int, time_limit: int = Player.DEFAULT_TIME_LIMIT):
         input_name = ""
         while Player.name_is_invalid(input_name):
@@ -27,16 +27,16 @@ class HumanPlayer(Player):
         If no valid move is made within the time limit, returns None to indicate forfeit.
         """
         gesture_options = ", ".join(HandGesture.choices())
-        
+
         # Request input with time limit
         input_gesture = self._game.input_provider.player_rps_request(
             self._id, gesture_options, self.time_limit
         )
-        
+
         # Check for timeout (indicated by None or empty string)
         if input_gesture is None or input_gesture == "":
             return None
-            
+
         # Continue requesting input until valid
         while not self.is_valid_move(input_gesture):
             input_gesture = self._game.input_provider.player_rps_request(
@@ -45,7 +45,7 @@ class HumanPlayer(Player):
             # Check for timeout again
             if input_gesture is None or input_gesture == "":
                 return None
-                
+
         if input_gesture.isdigit():
             gesture_number = int(input_gesture)
             return HandGesture.get_gesture_by_number(gesture_number)
