@@ -5,8 +5,6 @@ This file maintains the original interface while using the new
 refactored game implementation.
 """
 
-import sys
-
 from src.games.rps.rps_game import RPSGame
 from src.games.rps.rps_constants import RPSConstants
 from src.io_utils.input_provider_console import InputProviderConsole
