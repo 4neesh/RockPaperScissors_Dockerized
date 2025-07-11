@@ -1,17 +1,17 @@
 """
-Central configuration and constants module for the Paper Scissors Rock game.
+Central configuration and constants module for the game system.
 
-This module contains all magic numbers, strings, and configuration values
-used throughout the application, making them easy to maintain and modify.
+This module contains generic game constants that apply to all game types.
+Game-specific constants are kept in their respective modules.
 """
 
-from typing import Dict, Final
+from typing import Final
 
 
 class GameConstants:
-    """Constants related to game mechanics and rules."""
+    """Generic constants for the game system."""
 
-    # Game configuration
+    # Game flow configuration
     MAX_ROUNDS: Final[int] = 99
     MIN_ROUNDS: Final[int] = 1
     BEST_OF_SERIES_ROUNDS: Final[int] = 5
@@ -20,9 +20,6 @@ class GameConstants:
 
     # Time limits
     DEFAULT_MOVE_TIME_LIMIT: Final[int] = 10  # seconds
-
-    # Game types
-    GAME_TYPE_RPS: Final[str] = "rps"
 
     # Score manager types
     SCORE_MANAGER_STANDARD: Final[str] = "standard"
@@ -33,11 +30,6 @@ class GameConstants:
 
     # Exit command
     EXIT_COMMAND: Final[str] = "e"
-
-    # Hand gesture values
-    GESTURE_ROCK: Final[int] = 1
-    GESTURE_PAPER: Final[int] = 2
-    GESTURE_SCISSORS: Final[int] = 3
 
 
 class PlayerConstants:
@@ -108,8 +100,7 @@ class GameMessages:
 
     # Player setup
     PLAYER_NAME_PROMPT: Final[str] = "Please enter player {player_id} name: "
-    PLAYER_NAME_ERROR: Final[
-        str] = "Invalid input. Name cannot be empty and must be shorter than {max_length} characters."
+    PLAYER_NAME_ERROR: Final[str] = "Invalid input. Name cannot be empty and must be shorter than {max_length} characters."
 
     # Round setup
     ROUNDS_PROMPT: Final[str] = "Enter number of rounds to play ({min}-{max}) or '{bo5}' for Best of 5 mode: "
@@ -121,7 +112,7 @@ class GameMessages:
     TIMEOUT_MESSAGE: Final[str] = "\nTime's up!"
     BOTH_TIMEOUT: Final[str] = "\nBoth players took too long to respond. Round is a draw!"
     PLAYER_TIMEOUT: Final[str] = "\n{loser} took too long to respond. {winner} wins this round!"
-    INVALID_GESTURE: Final[str] = "Invalid input. Please enter a valid Hand Gesture number."
+    INVALID_GESTURE: Final[str] = "Invalid input. Please enter a valid move number."
 
     # Round display
     ROUND_HEADER: Final[str] = "\nRound {current} of {total}"
@@ -138,7 +129,7 @@ class GameMessages:
     REPLAY_PROMPT: Final[str] = "\nEnter 'y' to replay, or any key to exit \n"
     REPLAY_YES: Final[str] = "y"
 
-    # Gesture interactions
+    # Move interactions
     DRAW_DESCRIPTION: Final[str] = "{move1} vs {move2} is a draw"
     WIN_DESCRIPTION: Final[str] = "{winner} {action} {loser}"
     NO_DESCRIPTION: Final[str] = "No description available for {move1} vs {move2}"
@@ -148,21 +139,3 @@ class GameMessages:
     UNSUPPORTED_SCORE_TYPE: Final[str] = "Unsupported score manager type: {manager_type}"
     INVALID_GAME_MODE: Final[str] = "Invalid Game Mode created, all modes must be set-up for exactly {count} players"
     NO_RULE_DEFINED: Final[str] = "No rule defined between {move1} and {move2}"
-
-
-class RPSGameConstants:
-    """Constants specific to Rock-Paper-Scissors game."""
-
-    # Game name
-    GAME_NAME: Final[str] = "Paper Scissors Rock"
-
-    # Gesture interactions (verbs)
-    ROCK_ACTION: Final[str] = "blunts"
-    PAPER_ACTION: Final[str] = "wraps"
-    SCISSORS_ACTION: Final[str] = "cuts"
-
-    # Move format
-    GESTURE_FORMAT: Final[str] = "{value} = {name}"
-
-    # How many rounds Rock, Paper, Scissors would you like to play prompt
-    RPS_ROUNDS_PROMPT: Final[str] = "How many rounds of Rock, Paper, Scissors would you like to play? (Max: {max}) \n"

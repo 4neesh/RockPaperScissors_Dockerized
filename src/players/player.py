@@ -4,7 +4,7 @@ from src.constants import PlayerConstants
 
 class Player(ABC):
     """
-    Abstract base class representing a player in the Paper, Scissors, Rock game.
+    Abstract base class representing a player in the game.
     This class serves as a template for both human and computer players, providing
     common functionality like player name and move validation.
     """

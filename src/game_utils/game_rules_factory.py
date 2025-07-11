@@ -1,8 +1,9 @@
 from typing import Type, Dict
 
 from src.game_utils.game_rules import GameRules
-from src.game_utils.rps_rules import RPSRules
-from src.constants import GameConstants, GameMessages
+from src.games.rps.rps_rules import RPSRules
+from src.games.rps.rps_constants import RPSConstants
+from src.constants import GameMessages
 
 
 class GameRulesFactory:
@@ -13,7 +14,7 @@ class GameRulesFactory:
     """
 
     _rules_registry: Dict[str, Type[GameRules]] = {
-        GameConstants.GAME_TYPE_RPS: RPSRules
+        RPSConstants.GAME_TYPE: RPSRules
     }
 
     @classmethod

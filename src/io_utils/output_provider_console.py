@@ -1,6 +1,4 @@
-from src.game_utils.hand_gesture import HandGesture
 from src.io_utils.output_provider import OutputProvider
-from src.players.human_player import HumanPlayer
 from src.players.player import Player
 from src.constants import GameMessages, DisplayConstants, PlayerConstants
 
@@ -35,7 +33,7 @@ class OutputProviderConsole(OutputProvider):
     def output_round_number(self, round_number: int, rounds_in_game: int) -> None:
         print(GameMessages.ROUND_HEADER.format(current=round_number, total=rounds_in_game))
 
-    def output_round_moves(self, player_1: Player, player_2: Player, player_1_move: HandGesture, player_2_move: HandGesture) -> None:
+    def output_round_moves(self, player_1: Player, player_2: Player, player_1_move, player_2_move) -> None:
         print(GameMessages.ROUND_MOVES.format(
             player1=player_1.get_name(),
             move1=player_1_move,

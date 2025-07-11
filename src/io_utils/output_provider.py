@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from src.game_utils.hand_gesture import HandGesture
 from src.players.player import Player
 
 
@@ -15,8 +14,8 @@ class OutputProvider(ABC):
         pass
 
     @abstractmethod
-    def output_round_moves(self, player_1: Player, player_2: Player, player_1_move: HandGesture,
-                           player_2_move: HandGesture) -> None:
+    def output_round_moves(self, player_1: Player, player_2: Player, player_1_move,
+                           player_2_move) -> None:
         pass
 
     @abstractmethod

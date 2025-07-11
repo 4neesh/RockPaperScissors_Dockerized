@@ -1,7 +1,7 @@
 import signal
 from src.game_utils.game_mode import GameMode
 from src.io_utils.input_provider import InputProvider
-from src.constants import GameMessages, RPSGameConstants
+from src.constants import GameMessages
 
 
 class TimeoutException(Exception):
@@ -78,4 +78,5 @@ class InputProviderConsole(InputProvider):
             signal.alarm(0)
 
     def rounds_of_game_request(self, max_rounds: int) -> str:
-        return input(RPSGameConstants.RPS_ROUNDS_PROMPT.format(max=max_rounds)).strip()
+        from src.games.rps.rps_constants import RPSGameConfig
+        return input(RPSGameConfig.ROUNDS_PROMPT.format(max=max_rounds)).strip()

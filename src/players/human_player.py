@@ -1,11 +1,11 @@
-from src.game_utils.hand_gesture import HandGesture
+from src.games.rps.rps_move import RPSMove
 from src.players.player import Player
 from game import Game
 
 
 class HumanPlayer(Player):
     """
-    Represents a human player in the game. 
+    Represents a human player in the game.
     The player provides their name and makes moves interactively.
     """
 
@@ -20,13 +20,13 @@ class HumanPlayer(Player):
         self._game = game
         self._id = player_id
 
-    def make_move(self) -> HandGesture | None:
+    def make_move(self) -> RPSMove | None:
         """
-        Prompts the player to make a move in the Paper, Scissors, Rock game.
+        Prompts the player to make a move in the game.
         Continuously requests a valid move from the player until a valid input is provided.
         If no valid move is made within the time limit, returns None to indicate forfeit.
         """
-        gesture_options = ", ".join(HandGesture.choices())
+        gesture_options = ", ".join(RPSMove.get_formatted_choices())
 
         # Request input with time limit
         input_gesture = self._game.input_provider.player_rps_request(
@@ -48,7 +48,7 @@ class HumanPlayer(Player):
 
         if input_gesture.isdigit():
             gesture_number = int(input_gesture)
-            return HandGesture.get_gesture_by_number(gesture_number)
+            return RPSMove.get_move_by_value(gesture_number)
         elif input_gesture.lower() == self._game.EXIT_COMMAND:
             self._game.exit_game()
 
@@ -56,7 +56,7 @@ class HumanPlayer(Player):
         """Helper method to validate the move input."""
         if gesture.isdigit():
             gesture_number = int(gesture)
-            if HandGesture.validate_entry(gesture_number):
+            if RPSMove.validate_value(gesture_number):
                 return True
         elif gesture.lower() == self._game.EXIT_COMMAND:
             return True
