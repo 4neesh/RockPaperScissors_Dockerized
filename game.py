@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from src.constants import GameConstants
 from src.io_utils.input_provider import InputProvider
 from src.io_utils.output_provider import OutputProvider
 
@@ -12,7 +13,7 @@ class Game(ABC):
     Each game must handle its own startup and shutdown logic, and receive input/output providers for I/O abstraction.
     """
 
-    EXIT_COMMAND = "e"
+    EXIT_COMMAND = GameConstants.EXIT_COMMAND
 
     def __init__(self, input_prov: InputProvider, output_prov: OutputProvider):
         super().__init__()

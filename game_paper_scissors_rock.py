@@ -12,6 +12,7 @@ from src.io_utils.output_provider_console import OutputProviderConsole
 from src.io_utils.input_provider_console import InputProviderConsole
 from game import Game
 from src.game_factory import GameFactory
+from src.constants import GameConstants, GameMessages, ScoringConstants, RPSGameConstants
 
 
 class GamePaperScissorsRock(Game):
@@ -28,11 +29,11 @@ class GamePaperScissorsRock(Game):
         Run this module directly to play the game via the console.
     """
 
-    MAX_ROUNDS = 99
-    GAME_TYPE = "rps"
-    SCORE_MANAGER_TYPE = "standard"
-    MOVE_TIME_LIMIT = 10  # Time limit in seconds for each move
-    BEST_OF_5 = 5  # Constant for Best of 5 mode
+    MAX_ROUNDS = GameConstants.MAX_ROUNDS
+    GAME_TYPE = GameConstants.GAME_TYPE_RPS
+    SCORE_MANAGER_TYPE = GameConstants.SCORE_MANAGER_STANDARD
+    MOVE_TIME_LIMIT = GameConstants.DEFAULT_MOVE_TIME_LIMIT
+    BEST_OF_5 = GameConstants.BEST_OF_SERIES_ROUNDS
 
     @classmethod
     def register(cls):
@@ -47,7 +48,7 @@ class GamePaperScissorsRock(Game):
         self.rules = GameRulesFactory.create_rules(self.GAME_TYPE)
 
     def start_game(self):
-        self.output_provider.introduce_game("Paper Scissors Rock")
+        self.output_provider.introduce_game(RPSGameConstants.GAME_NAME)
         game_mode = self.select_game_mode()
         players = game_mode.initialise_players_in_game(self)
         self.play_game(players)  # Removed score_manager creation and passing
@@ -59,8 +60,8 @@ class GamePaperScissorsRock(Game):
         Args:
             players: A list of two players (player 1 and player 2)
         """
-        replay = "y"
-        while replay.lower() == "y":
+        replay = GameMessages.REPLAY_YES
+        while replay.lower() == GameMessages.REPLAY_YES:
             # Create a new score manager for each game to reset scores
             score_manager = ScoreManagerFactory.create_score_manager(
                 self.SCORE_MANAGER_TYPE,
@@ -71,7 +72,7 @@ class GamePaperScissorsRock(Game):
 
             game_option = self.request_game_option()
 
-            if game_option == "bo5":
+            if game_option == GameConstants.BEST_OF_5_COMMAND:
                 # Best of 5 mode
                 self.play_best_of_5(players[0], players[1], score_manager)
             else:
@@ -95,8 +96,9 @@ class GamePaperScissorsRock(Game):
         round_number = 1
 
         # Best of 5 means first to 3 points
-        while round_number <= self.BEST_OF_5 and score_manager.get_player_score(
-                player_1.get_name()) < 3 and score_manager.get_player_score(player_2.get_name()) < 3:
+        while (round_number <= self.BEST_OF_5 and
+               score_manager.get_player_score(player_1.get_name()) < GameConstants.BEST_OF_SERIES_WIN_THRESHOLD and
+               score_manager.get_player_score(player_2.get_name()) < GameConstants.BEST_OF_SERIES_WIN_THRESHOLD):
             self.output_provider.output_round_number(round_number, self.BEST_OF_5)
             # Get moves from players with time limit
             player_1_move = player_1.make_move()
@@ -105,22 +107,28 @@ class GamePaperScissorsRock(Game):
             # Handle timeout cases
             if player_1_move is None and player_2_move is None:
                 # Both players timed out, round is a draw
-                print("\nBoth players took too long to respond. Round is a draw!")
-                score_manager.update_scores_for_round(0)  # Draw result
+                print(GameMessages.BOTH_TIMEOUT)
+                score_manager.update_scores_for_round(ScoringConstants.DRAW)
                 score_manager.return_leaderboard()
                 round_number += 1
                 continue
             elif player_1_move is None:
                 # Player 1 timed out, Player 2 wins
-                print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
-                score_manager.update_scores_for_round(-1)  # Player 2 wins
+                print(GameMessages.PLAYER_TIMEOUT.format(
+                    loser=player_1.get_name(),
+                    winner=player_2.get_name()
+                ))
+                score_manager.update_scores_for_round(ScoringConstants.PLAYER_2_WIN)
                 score_manager.return_leaderboard()
                 round_number += 1
                 continue
             elif player_2_move is None:
                 # Player 2 timed out, Player 1 wins
-                print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
-                score_manager.update_scores_for_round(1)  # Player 1 wins
+                print(GameMessages.PLAYER_TIMEOUT.format(
+                    loser=player_2.get_name(),
+                    winner=player_1.get_name()
+                ))
+                score_manager.update_scores_for_round(ScoringConstants.PLAYER_1_WIN)
                 score_manager.return_leaderboard()
                 round_number += 1
                 continue
@@ -140,11 +148,11 @@ class GamePaperScissorsRock(Game):
 
         # Provide feedback about best-of-5 result
         if score_manager.get_player_score(player_1.get_name()) > score_manager.get_player_score(player_2.get_name()):
-            print(f"\n{player_1.get_name()} wins the Best of 5 series!")
+            print(GameMessages.BEST_OF_5_WINNER.format(winner=player_1.get_name()))
         elif score_manager.get_player_score(player_2.get_name()) > score_manager.get_player_score(player_1.get_name()):
-            print(f"\n{player_2.get_name()} wins the Best of 5 series!")
+            print(GameMessages.BEST_OF_5_WINNER.format(winner=player_2.get_name()))
         else:
-            print(f"Best of 5 series finishes in a draw!")
+            print(GameMessages.BEST_OF_5_DRAW)
 
     def play_rounds(self, rounds_in_game: int, player_1: Player, player_2: Player, score_manager: ScoreManager):
         """
@@ -163,19 +171,28 @@ class GamePaperScissorsRock(Game):
             player_1_move = player_1.make_move()
             player_2_move = player_2.make_move()
 
+            # Handle timeout cases
             if player_1_move is None and player_2_move is None:
-                print("\nBoth players took too long to respond. Round is a draw!")
-                score_manager.update_scores_for_round(0)  # Draw result
+                # Both players timed out, round is a draw
+                print(GameMessages.BOTH_TIMEOUT)
                 score_manager.return_leaderboard()
                 continue
-            if player_1_move is None:
-                print(f"\n{player_1.get_name()} took too long to respond. {player_2.get_name()} wins this round!")
-                score_manager.update_scores_for_round(-1)
+            elif player_1_move is None:
+                # Player 1 timed out, Player 2 wins
+                print(GameMessages.PLAYER_TIMEOUT.format(
+                    loser=player_1.get_name(),
+                    winner=player_2.get_name()
+                ))
+                score_manager.update_scores_for_round(ScoringConstants.PLAYER_2_WIN)
                 score_manager.return_leaderboard()
                 continue
             elif player_2_move is None:
-                print(f"\n{player_2.get_name()} took too long to respond. {player_1.get_name()} wins this round!")
-                score_manager.update_scores_for_round(1)
+                # Player 2 timed out, Player 1 wins
+                print(GameMessages.PLAYER_TIMEOUT.format(
+                    loser=player_2.get_name(),
+                    winner=player_1.get_name()
+                ))
+                score_manager.update_scores_for_round(ScoringConstants.PLAYER_1_WIN)
                 score_manager.return_leaderboard()
                 continue
 
@@ -199,17 +216,21 @@ class GamePaperScissorsRock(Game):
         Returns:
             str: Either a number of rounds to play (as a string) or "bo5"
         """
-        prompt = f"Enter number of rounds to play (1-{self.MAX_ROUNDS}) or 'bo5' for Best of 5 mode: "
+        prompt = GameMessages.ROUNDS_PROMPT.format(
+            min=GameConstants.MIN_ROUNDS,
+            max=self.MAX_ROUNDS,
+            bo5=GameConstants.BEST_OF_5_COMMAND
+        )
         game_option = input(prompt).strip().lower()
 
         # Check if it's the Best of 5 option
-        if game_option == "bo5":
+        if game_option == GameConstants.BEST_OF_5_COMMAND:
             return game_option
 
         # Otherwise validate as regular rounds input
         while not self.is_valid_rounds(game_option):
             game_option = input(prompt).strip().lower()
-            if game_option == "bo5":
+            if game_option == GameConstants.BEST_OF_5_COMMAND:
                 return game_option
 
         return game_option
@@ -218,7 +239,7 @@ class GamePaperScissorsRock(Game):
         """Helper method to validate the rounds input."""
         if rounds_to_play.isdigit():
             rounds = int(rounds_to_play)
-            if 0 < rounds <= GamePaperScissorsRock.MAX_ROUNDS:
+            if GameConstants.MIN_ROUNDS <= rounds <= GamePaperScissorsRock.MAX_ROUNDS:
                 return True
         self.output_provider.output_rounds_error(GamePaperScissorsRock.MAX_ROUNDS)
         return False

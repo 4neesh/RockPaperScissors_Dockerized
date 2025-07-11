@@ -15,7 +15,8 @@ class OutputProvider(ABC):
         pass
 
     @abstractmethod
-    def output_round_moves(self, player_1: Player, player_2: Player, player_1_move: HandGesture, player_2_move: HandGesture) -> None:
+    def output_round_moves(self, player_1: Player, player_2: Player, player_1_move: HandGesture,
+                           player_2_move: HandGesture) -> None:
         pass
 
     @abstractmethod
@@ -46,7 +47,7 @@ class OutputProvider(ABC):
     def output_round_description(self, description: str) -> None:
         """
         Output the description of a round result.
-        
+
         Args:
             description: A string describing the round outcome
         """
@@ -67,4 +68,3 @@ class OutputProvider(ABC):
     @abstractmethod
     def output_game_mode_error(self) -> None:
         pass
-

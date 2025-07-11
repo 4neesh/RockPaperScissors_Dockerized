@@ -1,51 +1,50 @@
-from typing import Dict, Type
+from typing import Type, Dict
 
 from game import Game
 from src.io_utils.input_provider import InputProvider
 from src.io_utils.output_provider import OutputProvider
+from src.constants import GameMessages
 
 
 class GameFactory:
     """
     Factory class for creating game instances.
-    
-    This class implements the Factory pattern to create game objects of different types,
-    allowing the system to be extended with new games without modifying existing code.
+
+    This factory manages the creation of different game types and ensures
+    that appropriate input/output providers are used for each game.
     """
-    
-    # Registry of available game implementations
-    _game_registry: Dict[str, Type[Game]] = {}
-    
+
+    _games_registry: Dict[str, Type[Game]] = {}
+
     @classmethod
-    def create_game(cls, game_type: str, input_provider: InputProvider, 
-                   output_provider: OutputProvider) -> Game:
+    def create_game(cls, game_type: str, input_provider: InputProvider, output_provider: OutputProvider) -> Game:
         """
-        Creates a game instance of the specified type.
-        
+        Create a game instance of the specified type.
+
         Args:
             game_type: The type of game to create
-            input_provider: The input provider to use for the game
-            output_provider: The output provider to use for the game
-            
+            input_provider: Provider for handling input
+            output_provider: Provider for handling output
+
         Returns:
-            An instance of the game
-            
+            An instance of the requested game type
+
         Raises:
-            ValueError: If the game type is not registered
+            ValueError: If the game type is not supported
         """
-        if game_type not in cls._game_registry:
-            raise ValueError(f"Unsupported game type: {game_type}")
-        
-        game_class = cls._game_registry[game_type]
+        if game_type not in cls._games_registry:
+            raise ValueError(GameMessages.UNSUPPORTED_GAME_TYPE.format(game_type=game_type))
+
+        game_class = cls._games_registry[game_type]
         return game_class(input_provider, output_provider)
-    
+
     @classmethod
-    def register_game(cls, game_type: str, game_class: Type[Game]) -> None:
+    def register_game(cls, game_type: str, game_class: Type[Game]):
         """
-        Register a new game implementation.
-        
+        Register a new game type with the factory.
+
         Args:
-            game_type: The identifier for the game type
-            game_class: The class implementing the game
+            game_type: The key for this game type
+            game_class: The Game subclass to register
         """
-        cls._game_registry[game_type] = game_class
+        cls._games_registry[game_type] = game_class
