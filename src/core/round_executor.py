@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 from src.core.game_move import GameMove
 from src.core.timeout_handler import TimeoutHandler, TimeoutResult
 from src.players.player import Player
-from src.game_utils.game_rules import GameRules
+from game_engine import GameEngine
 from src.constants import ScoringConstants
 
 
@@ -22,13 +22,13 @@ class RoundExecutor:
     including move collection, timeout handling, and result determination.
     """
 
-    def __init__(self, rules: GameRules, output_provider):
-        self.rules = rules
+    def __init__(self, game_engine: GameEngine, output_provider):
+        self.game_engine = game_engine
         self.output_provider = output_provider
         self.timeout_handler = TimeoutHandler(output_provider)
 
     def execute_round(self, player_1: Player, player_2: Player,
-                      score_manager, round_number: int = None,
+                      round_number: int = None,
                       total_rounds: int = None) -> bool:
         """
         Execute a single round of the game.
@@ -36,7 +36,6 @@ class RoundExecutor:
         Args:
             player_1: The first player
             player_2: The second player
-            score_manager: The score manager to update
             round_number: Current round number (for display)
             total_rounds: Total number of rounds (for display)
 
@@ -53,27 +52,28 @@ class RoundExecutor:
 
         # Handle timeout cases
         timeout_result, score_update = self.timeout_handler.handle_timeout(
-            player_1, player_2, move_1, move_2, score_manager
+            player_1, player_2, move_1, move_2, self.game_engine
         )
 
         if timeout_result != TimeoutResult.BOTH_VALID:
             return False  # Timeout occurred
 
         # Normal case - both players made valid moves
-        self._process_valid_moves(player_1, player_2, move_1, move_2, score_manager)
+        self._process_valid_moves(player_1, player_2, move_1, move_2)
         return True
 
     def _process_valid_moves(self, player_1: Player, player_2: Player,
-                             move_1: GameMove, move_2: GameMove, score_manager):
+                             move_1: GameMove, move_2: GameMove):
         """Process a round where both players made valid moves."""
         # Display the moves
         self.output_provider.output_round_moves(player_1, player_2, move_1, move_2)
 
-        # Get interaction description
-        interaction_description = self.rules.get_interaction_description(move_1, move_2)
+        # Process round with game engine
+        round_result, interaction_description = self.game_engine.process_round(move_1, move_2)
+        
+        # Display interaction description
         self.output_provider.output_round_description(interaction_description)
 
-        # Determine result and update scores
-        round_result = self.rules.determine_result(move_1, move_2)
-        score_manager.update_scores_for_round(round_result)
-        score_manager.return_leaderboard()
+        # Display updated scores
+        scores = self.game_engine.get_scores()
+        self.output_provider.output_scores_table(scores)

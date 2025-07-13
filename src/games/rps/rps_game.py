@@ -9,6 +9,7 @@ import sys
 from typing import List
 
 from game import Game
+from game_engine import GameEngine
 from src.core.game_flow_manager import GameFlowManager
 from src.games.rps.rps_constants import RPSConstants, RPSGameConfig
 from src.games.rps.rps_rules import RPSRules
@@ -36,7 +37,8 @@ class RPSGame(Game):
     def __init__(self, input_prov: InputProvider, output_prov: OutputProvider):
         super().__init__(input_prov, output_prov)
         self.rules = RPSRules()
-        self.game_flow_manager = GameFlowManager(self.rules, output_prov)
+        self.game_engine = GameEngine(self.rules)
+        self.game_flow_manager = GameFlowManager(self.game_engine, output_prov)
 
     def start_game(self):
         """Start the RPS game."""
@@ -55,44 +57,47 @@ class RPSGame(Game):
         replay = GameMessages.REPLAY_YES
 
         while replay.lower() == GameMessages.REPLAY_YES:
-            # Create fresh score manager for each session
-            score_manager = ScoreManagerFactory.create_score_manager(
-                self.SCORE_MANAGER_TYPE,
-                self,
-                players[0].get_name(),
-                players[1].get_name()
+            # Initialize game engine with fresh scores
+            self.game_engine.initialize_game_session(
+                players[0].get_name(), 
+                players[1].get_name(),
+                use_streaks=(self.SCORE_MANAGER_TYPE == "streak")
             )
 
             # Play a single game session
-            self._play_single_session(players[0], players[1], score_manager)
+            self._play_single_session(players[0], players[1])
 
             # Show final results and ask for replay
-            score_manager.return_game_result()
+            winner, winner_score, loser_score = self.game_engine.determine_winner()
+            if winner:
+                self.output_provider.output_game_winner(winner, winner_score, loser_score)
+            else:
+                self.output_provider.output_drawn_game()
+                
             replay = self.input_provider.play_again_request()
 
         self.exit_game()
 
-    def _play_single_session(self, player_1: Player, player_2: Player, score_manager):
+    def _play_single_session(self, player_1: Player, player_2: Player):
         """
         Play a single game session.
 
         Args:
             player_1: The first player
             player_2: The second player
-            score_manager: Score manager for this session
         """
         game_option = self._request_game_option()
 
         if game_option == GameConstants.BEST_OF_5_COMMAND:
             # Best of 5 mode
             self.game_flow_manager.play_best_of_series(
-                player_1, player_2, score_manager
+                player_1, player_2
             )
         else:
             # Standard rounds mode
             rounds_to_play = int(game_option)
             self.game_flow_manager.play_standard_rounds(
-                rounds_to_play, player_1, player_2, score_manager
+                rounds_to_play, player_1, player_2
             )
 
     def _request_game_option(self) -> str:

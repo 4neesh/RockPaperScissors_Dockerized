@@ -2,7 +2,7 @@
 Refactored Rock-Paper-Scissors main game entry point.
 
 This file maintains the original interface while using the new
-refactored game implementation.
+refactored game implementation with GameEngine.
 """
 
 from src.games.rps.rps_game import RPSGame
