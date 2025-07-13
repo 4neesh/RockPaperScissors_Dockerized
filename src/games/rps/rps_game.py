@@ -18,6 +18,7 @@ from src.io_utils.input_provider import InputProvider
 from src.io_utils.output_provider import OutputProvider
 from src.players.player import Player
 from src.constants import GameConstants, GameMessages
+from game_engine import GameEngine  # Import the new GameEngine class
 
 
 class RPSGame(Game):
@@ -36,6 +37,7 @@ class RPSGame(Game):
     def __init__(self, input_prov: InputProvider, output_prov: OutputProvider):
         super().__init__(input_prov, output_prov)
         self.rules = RPSRules()
+        self.game_engine = GameEngine(self.rules, output_prov)  # Initialize the game engine
         self.game_flow_manager = GameFlowManager(self.rules, output_prov)
 
     def start_game(self):
@@ -110,35 +112,11 @@ class RPSGame(Game):
 
         game_option = input(prompt).strip().lower()
 
-        # Validate input
-        while not self._is_valid_game_option(game_option):
+        # Validate input using the game engine
+        while not self.game_engine.validate_game_option(game_option, self.MAX_ROUNDS):
             game_option = input(prompt).strip().lower()
 
         return game_option
-
-    def _is_valid_game_option(self, option: str) -> bool:
-        """
-        Validate the game option input.
-
-        Args:
-            option: The user's input
-
-        Returns:
-            True if valid, False otherwise
-        """
-        # Check for best of 5 option
-        if option == GameConstants.BEST_OF_5_COMMAND:
-            return True
-
-        # Check for valid rounds number
-        if option.isdigit():
-            rounds = int(option)
-            if GameConstants.MIN_ROUNDS <= rounds <= self.MAX_ROUNDS:
-                return True
-
-        # Invalid input
-        self.output_provider.output_rounds_error(self.MAX_ROUNDS)
-        return False
 
     def _select_game_mode(self) -> GameMode:
         """
